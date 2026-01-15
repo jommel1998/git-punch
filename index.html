@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hero Training / Core-Tracker</title>
+    <style>
+        :root {
+            --bg-main: #0d1117;
+            --bg-card: #161b22;
+            --border: #30363d;
+            --text-main: #c9d1d9;
+            --text-sub: #8b949e;
+            --gh-blue: #58a6ff;
+            --gh-gold: #f1c40f;
+            --lvl-0: #161b22;
+            --lvl-1: #0e4429;
+            --lvl-2: #006d32;
+            --lvl-3: #26a641;
+            --lvl-4: #39d353;
+            --overlay: rgba(0, 0, 0, 0.8);
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            margin: 0; padding: 0;
+        }
+
+        /* Navbar & Rank Toggle */
+        .navbar {
+            background-color: #010409;
+            padding: 12px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .hero-rank {
+            background: rgba(241, 196, 15, 0.1);
+            color: var(--gh-gold);
+            padding: 4px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--gh-gold);
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .hero-rank:hover {
+            transform: scale(1.05);
+            background: rgba(241, 196, 15, 0.2);
+        }
+
+        /* Modal Styling */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--overlay);
+            display: none; /* Hidden by default */
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            width: 90%;
+            max-width: 450px;
+            padding: 24px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+        }
+
+        .modal-header h3 { margin: 0; color: var(--gh-gold); }
+
+        .close-modal {
+            color: var(--text-sub);
+            font-size: 24px;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .rank-list { list-style: none; padding: 0; }
+        .rank-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(48, 54, 61, 0.5);
+        }
+        .rank-item:last-child { border-bottom: none; }
+        .rank-label { font-weight: 600; color: var(--gh-blue); }
+        .rank-req { font-size: 13px; color: var(--text-sub); }
+
+        /* Rest of UI from previous step */
+        .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+        .calendar-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 20px; margin-bottom: 24px; overflow-x: auto; }
+        .month-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
+        .month-container { font-size: 11px; color: var(--text-sub); }
+        .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-top: 5px; }
+        .day-sq { aspect-ratio: 1/1; background: var(--lvl-0); border-radius: 2px; border: 1px solid rgba(255,255,255,0.05); }
+        .day-sq.intensity-1 { background: var(--lvl-1); }
+        .day-sq.intensity-2 { background: var(--lvl-2); }
+        .day-sq.intensity-3 { background: var(--lvl-3); }
+        .day-sq.intensity-4 { background: var(--lvl-4); }
+        .day-sq.today { border: 1.5px solid var(--gh-blue); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+        .repo-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 16px; }
+        .repo-name { color: var(--gh-blue); font-weight: 600; font-size: 14px; display: block; margin-bottom: 8px;}
+        .counter { font-size: 24px; font-weight: 600; margin-bottom: 8px; }
+        .progress-track { background: #21262d; height: 6px; border-radius: 3px; overflow: hidden; margin-bottom: 15px; }
+        .fill { height: 100%; background: var(--lvl-3); width: 0%; transition: 0.3s; }
+        .actions { display: flex; gap: 5px; }
+        button { background: #238636; color: white; border: 1px solid var(--border); padding: 8px; font-size: 12px; border-radius: 4px; cursor: pointer; flex: 1; }
+        .btn-sub { background: #21262d; color: var(--text-main); }
+        
+        .selected-date-title {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: var(--text-main);
+        }
+
+        .legend {
+            display: flex; gap: 5px; font-size: 10px; align-items: center; margin-top: 10px;
+        }
+        .leg-sq { width: 10px; height: 10px; border-radius: 2px; }
+
+    </style>
+</head>
+<body>
+
+    <div class="modal-overlay" id="rankModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Hero Ranking System</h3>
+                <span class="close-modal" id="closeModal">&times;</span>
+            </div>
+            <div class="rank-list">
+                <div class="rank-item">
+                    <span class="rank-label">C-Class Hero</span>
+                    <span class="rank-req">Starting Rank</span>
+                </div>
+                <div class="rank-item">
+                    <span class="rank-label">B-Class Hero</span>
+                    <span class="rank-req">20 Active Days</span>
+                </div>
+                <div class="rank-item">
+                    <span class="rank-label">A-Class Hero</span>
+                    <span class="rank-req">50 Active Days</span>
+                </div>
+                <div class="rank-item">
+                    <span class="rank-label">S-Class Hero</span>
+                    <span class="rank-req">100 Active Days</span>
+                </div>
+                <div class="rank-item">
+                    <span class="rank-label" style="color:var(--gh-gold)">God Level (Saitama)</span>
+                    <span class="rank-req">300 Active Days</span>
+                </div>
+            </div>
+            <p style="font-size: 12px; color: var(--text-sub); margin-top: 15px;">
+                *An "Active Day" is any day you log effort on the calendar.
+            </p>
+        </div>
+    </div>
+
+    <nav class="navbar">
+        <span class="logo"><strong>Saitama</strong> / Core-Tracker</span>
+        <div id="rank-display" class="hero-rank" onclick="toggleModal(true)">Rank: C-Class</div>
+    </nav>
+
+    <main class="container">
+        <div class="calendar-section">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px;">
+                <span>Training Contributions 2026</span>
+                <span id="total-days-count">0 Days Active</span>
+            </div>
+            <div id="calendar-wrapper" class="month-grid"></div>
+            <div class="legend">
+                <span>Less</span>
+                <div class="leg-sq" style="background: var(--lvl-0)"></div>
+                <div class="leg-sq" style="background: var(--lvl-1)"></div>
+                <div class="leg-sq" style="background: var(--lvl-2)"></div>
+                <div class="leg-sq" style="background: var(--lvl-3)"></div>
+                <div class="leg-sq" style="background: var(--lvl-4)"></div>
+                <span>More</span>
+            </div>
+        </div>
+
+        <div id="editor-zone">
+            <h2 style="font-size: 18px; margin-bottom: 20px;">Today: <span id="display-date" style="color: var(--gh-blue);"></span></h2>
+            <div class="grid">
+                <div class="repo-card">
+                    <span class="repo-name">push-ups.sh</span>
+                    <div class="counter"><span id="pushups-count">0</span> / 100</div>
+                    <div class="progress-track"><div id="pushups-bar" class="fill"></div></div>
+                    <div class="actions"><button onclick="update('pushups', 10)">+10</button><button class="btn-sub" onclick="update('pushups', -10)">-10</button></div>
+                </div>
+                <div class="repo-card">
+                    <span class="repo-name">sit-ups.sh</span>
+                    <div class="counter"><span id="situps-count">0</span> / 100</div>
+                    <div class="progress-track"><div id="situps-bar" class="fill"></div></div>
+                    <div class="actions"><button onclick="update('situps', 10)">+10</button><button class="btn-sub" onclick="update('situps', -10)">-10</button></div>
+                </div>
+                <div class="repo-card">
+                    <span class="repo-name">squats.sh</span>
+                    <div class="counter"><span id="squats-count">0</span> / 100</div>
+                    <div class="progress-track"><div id="squats-bar" class="fill"></div></div>
+                    <div class="actions"><button onclick="update('squats', 10)">+10</button><button class="btn-sub" onclick="update('squats', -10)">-10</button></div>
+                </div>
+                <div class="repo-card">
+                    <span class="repo-name">ten-km-run.sh</span>
+                    <div class="counter"><span id="steps-count">0</span> / 10k</div>
+                    <div class="progress-track"><div id="steps-bar" class="fill"></div></div>
+                    <div class="actions"><button onclick="update('steps', 1000)">+1k</button><button class="btn-sub" onclick="update('steps', -1000)">-1k</button></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const goals = { pushups: 100, situps: 100, squats: 100, steps: 10000 };
+        const allData = JSON.parse(localStorage.getItem('heroLogs_v2')) || {};
+        
+        const now = new Date();
+        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        
+        // Modal Logic
+        const modal = document.getElementById('rankModal');
+        const closeBtn = document.getElementById('closeModal');
+
+        function toggleModal(show) {
+            modal.style.display = show ? 'flex' : 'none';
+        }
+
+        closeBtn.onclick = () => toggleModal(false);
+        window.onclick = (event) => { if (event.target == modal) toggleModal(false); }
+
+        function getIntensity(dateStr) {
+            const d = allData[dateStr];
+            if (!d) return 0;
+            const totalProgress = (d.pushups/100) + (d.situps/100) + (d.squats/100) + (d.steps/10000);
+            if (totalProgress === 0) return 0;
+            if (totalProgress <= 1) return 1;
+            if (totalProgress <= 2) return 2;
+            if (totalProgress <= 3.5) return 3;
+            return 4;
+        }
+
+        function initCalendar() {
+            const wrapper = document.getElementById('calendar-wrapper');
+            wrapper.innerHTML = '';
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            
+            months.forEach((month, mIdx) => {
+                const monthDiv = document.createElement('div');
+                monthDiv.className = 'month-container';
+                monthDiv.innerHTML = `<div>${month}</div>`;
+                const daysGrid = document.createElement('div');
+                daysGrid.className = 'days-grid';
+                const daysInMonth = new Date(2026, mIdx + 1, 0).getDate();
+                
+                for(let d = 1; d <= daysInMonth; d++) {
+                    const dateStr = `2026-${String(mIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                    const daySq = document.createElement('div');
+                    daySq.className = 'day-sq';
+                    const intensity = getIntensity(dateStr);
+                    if(intensity > 0) daySq.classList.add(`intensity-${intensity}`);
+                    if(dateStr === todayStr) daySq.classList.add('today');
+                    daysGrid.appendChild(daySq);
+                }
+                monthDiv.appendChild(daysGrid);
+                wrapper.appendChild(monthDiv);
+            });
+            updateHeroRank();
+        }
+
+        function update(exercise, amount) {
+            if(!allData[todayStr]) allData[todayStr] = { pushups: 0, situps: 0, squats: 0, steps: 0 };
+            allData[todayStr][exercise] = Math.max(0, Math.min(goals[exercise], allData[todayStr][exercise] + amount));
+            localStorage.setItem('heroLogs_v2', JSON.stringify(allData));
+            renderForm();
+            initCalendar();
+        }
+
+        function renderForm() {
+            document.getElementById('display-date').innerText = todayStr;
+            const data = allData[todayStr] || { pushups: 0, situps: 0, squats: 0, steps: 0 };
+            for (const key in goals) {
+                document.getElementById(`${key}-count`).innerText = data[key].toLocaleString();
+                document.getElementById(`${key}-bar`).style.width = `${(data[key] / goals[key]) * 100}%`;
+            }
+        }
+
+        function updateHeroRank() {
+            const activeDays = Object.keys(allData).length;
+            let rank = "C-Class Hero";
+            if (activeDays >= 300) rank = "Saitama Level";
+            else if (activeDays >= 100) rank = "S-Class Hero";
+            else if (activeDays >= 50) rank = "A-Class Hero";
+            else if (activeDays >= 20) rank = "B-Class Hero";
+            document.getElementById('rank-display').innerText = `Rank: ${rank}`;
+            document.getElementById('total-days-count').innerText = `${activeDays} Days Active`;
+        }
+
+        initCalendar();
+        renderForm();
+    </script>
+</body>
+</html>
