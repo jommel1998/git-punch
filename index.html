@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hero Training / Core-Tracker</title>
+    <title>git-punch / Hero Training</title>
     <style>
         :root {
             --bg-main: #0d1117;
@@ -28,7 +28,6 @@
             margin: 0; padding: 0;
         }
 
-        /* Navbar & Rank Toggle */
         .navbar {
             background-color: #010409;
             padding: 12px 24px;
@@ -55,12 +54,11 @@
             background: rgba(241, 196, 15, 0.2);
         }
 
-        /* Modal Styling */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
             background: var(--overlay);
-            display: none; /* Hidden by default */
+            display: none;
             justify-content: center;
             align-items: center;
             z-index: 1000;
@@ -106,7 +104,6 @@
         .rank-label { font-weight: 600; color: var(--gh-blue); }
         .rank-req { font-size: 13px; color: var(--text-sub); }
 
-        /* Rest of UI from previous step */
         .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
         .calendar-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 20px; margin-bottom: 24px; overflow-x: auto; }
         .month-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
@@ -126,6 +123,7 @@
         .fill { height: 100%; background: var(--lvl-3); width: 0%; transition: 0.3s; }
         .actions { display: flex; gap: 5px; }
         button { background: #238636; color: white; border: 1px solid var(--border); padding: 8px; font-size: 12px; border-radius: 4px; cursor: pointer; flex: 1; }
+        button:hover { background: #2ea043; }
         .btn-sub { background: #21262d; color: var(--text-main); }
         
         .selected-date-title {
@@ -178,14 +176,14 @@
     </div>
 
     <nav class="navbar">
-        <span class="logo"><strong>Saitama</strong> / Core-Tracker</span>
+        <span class="logo"><strong>Saitama</strong> / git-punch</span>
         <div id="rank-display" class="hero-rank" onclick="toggleModal(true)">Rank: C-Class</div>
     </nav>
 
     <main class="container">
         <div class="calendar-section">
             <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px;">
-                <span>Training Contributions 2026</span>
+                <span id="calendar-title">Training Contributions</span>
                 <span id="total-days-count">0 Days Active</span>
             </div>
             <div id="calendar-wrapper" class="month-grid"></div>
@@ -207,25 +205,37 @@
                     <span class="repo-name">push-ups.sh</span>
                     <div class="counter"><span id="pushups-count">0</span> / 100</div>
                     <div class="progress-track"><div id="pushups-bar" class="fill"></div></div>
-                    <div class="actions"><button onclick="update('pushups', 10)">+10</button><button class="btn-sub" onclick="update('pushups', -10)">-10</button></div>
+                    <div class="actions">
+                        <button onclick="update('pushups', 10)">+10</button>
+                        <button class="btn-sub" onclick="update('pushups', -10)">-10</button>
+                    </div>
                 </div>
                 <div class="repo-card">
                     <span class="repo-name">sit-ups.sh</span>
                     <div class="counter"><span id="situps-count">0</span> / 100</div>
                     <div class="progress-track"><div id="situps-bar" class="fill"></div></div>
-                    <div class="actions"><button onclick="update('situps', 10)">+10</button><button class="btn-sub" onclick="update('situps', -10)">-10</button></div>
+                    <div class="actions">
+                        <button onclick="update('situps', 10)">+10</button>
+                        <button class="btn-sub" onclick="update('situps', -10)">-10</button>
+                    </div>
                 </div>
                 <div class="repo-card">
                     <span class="repo-name">squats.sh</span>
                     <div class="counter"><span id="squats-count">0</span> / 100</div>
                     <div class="progress-track"><div id="squats-bar" class="fill"></div></div>
-                    <div class="actions"><button onclick="update('squats', 10)">+10</button><button class="btn-sub" onclick="update('squats', -10)">-10</button></div>
+                    <div class="actions">
+                        <button onclick="update('squats', 10)">+10</button>
+                        <button class="btn-sub" onclick="update('squats', -10)">-10</button>
+                    </div>
                 </div>
                 <div class="repo-card">
                     <span class="repo-name">ten-km-run.sh</span>
                     <div class="counter"><span id="steps-count">0</span> / 10k</div>
                     <div class="progress-track"><div id="steps-bar" class="fill"></div></div>
-                    <div class="actions"><button onclick="update('steps', 1000)">+1k</button><button class="btn-sub" onclick="update('steps', -1000)">-1k</button></div>
+                    <div class="actions">
+                        <button onclick="update('steps', 1000)">+1k</button>
+                        <button class="btn-sub" onclick="update('steps', -1000)">-1k</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -235,8 +245,10 @@
         const goals = { pushups: 100, situps: 100, squats: 100, steps: 10000 };
         const allData = JSON.parse(localStorage.getItem('heroLogs_v2')) || {};
         
+        // DYNAMIC DATE & YEAR LOGIC
         const now = new Date();
-        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const currentYear = now.getFullYear();
+        const todayStr = `${currentYear}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         
         // Modal Logic
         const modal = document.getElementById('rankModal');
@@ -263,6 +275,10 @@
         function initCalendar() {
             const wrapper = document.getElementById('calendar-wrapper');
             wrapper.innerHTML = '';
+            
+            // Dynamic Year Title
+            document.getElementById('calendar-title').innerText = `Training Contributions ${currentYear}`;
+
             const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
             
             months.forEach((month, mIdx) => {
@@ -271,10 +287,12 @@
                 monthDiv.innerHTML = `<div>${month}</div>`;
                 const daysGrid = document.createElement('div');
                 daysGrid.className = 'days-grid';
-                const daysInMonth = new Date(2026, mIdx + 1, 0).getDate();
+                
+                // Dynamic days in month based on current year
+                const daysInMonth = new Date(currentYear, mIdx + 1, 0).getDate();
                 
                 for(let d = 1; d <= daysInMonth; d++) {
-                    const dateStr = `2026-${String(mIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                    const dateStr = `${currentYear}-${String(mIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                     const daySq = document.createElement('div');
                     daySq.className = 'day-sq';
                     const intensity = getIntensity(dateStr);
@@ -306,12 +324,14 @@
         }
 
         function updateHeroRank() {
+            // Rank is calculated based on ALL days ever logged in LocalStorage
             const activeDays = Object.keys(allData).length;
             let rank = "C-Class Hero";
             if (activeDays >= 300) rank = "Saitama Level";
             else if (activeDays >= 100) rank = "S-Class Hero";
             else if (activeDays >= 50) rank = "A-Class Hero";
             else if (activeDays >= 20) rank = "B-Class Hero";
+            
             document.getElementById('rank-display').innerText = `Rank: ${rank}`;
             document.getElementById('total-days-count').innerText = `${activeDays} Days Active`;
         }
