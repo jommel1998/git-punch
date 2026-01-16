@@ -12,7 +12,7 @@
 - 100 Push-ups
 - 100 Sit-ups
 - 100 Squats
-- 10km Run (10,000 Steps)
+- 10,000 Steps
 
 ## 📈 Ranking System
 | Rank | Requirement |
