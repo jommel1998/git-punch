@@ -126,12 +126,6 @@
         button:hover { background: #2ea043; }
         .btn-sub { background: #21262d; color: var(--text-main); }
         
-        .selected-date-title {
-            font-size: 18px;
-            margin-bottom: 20px;
-            color: var(--text-main);
-        }
-
         .legend {
             display: flex; gap: 5px; font-size: 10px; align-items: center; margin-top: 10px;
         }
@@ -237,20 +231,28 @@
                         <button class="btn-sub" onclick="update('steps', -1000)">-1k</button>
                     </div>
                 </div>
+                <div class="repo-card">
+                    <span class="repo-name">no-sugar-coat.sh</span>
+                    <div class="counter"><span id="sugar-count">0</span> / 1</div>
+                    <div class="progress-track"><div id="sugar-bar" class="fill"></div></div>
+                    <div class="actions">
+                        <button onclick="update('sugar', 1)">+1</button>
+                        <button class="btn-sub" onclick="update('sugar', -1)">-1</button>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
 
     <script>
-        const goals = { pushups: 100, situps: 100, squats: 100, steps: 10000 };
+        // Data Schema with Sugar added
+        const goals = { pushups: 100, situps: 100, squats: 100, steps: 10000, sugar: 1 };
         const allData = JSON.parse(localStorage.getItem('heroLogs_v2')) || {};
         
-        // DYNAMIC DATE & YEAR LOGIC
         const now = new Date();
         const currentYear = now.getFullYear();
         const todayStr = `${currentYear}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         
-        // Modal Logic
         const modal = document.getElementById('rankModal');
         const closeBtn = document.getElementById('closeModal');
 
@@ -264,21 +266,19 @@
         function getIntensity(dateStr) {
             const d = allData[dateStr];
             if (!d) return 0;
-            const totalProgress = (d.pushups/100) + (d.situps/100) + (d.squats/100) + (d.steps/10000);
+            // Weighted progress calculation
+            const totalProgress = (d.pushups/100) + (d.situps/100) + (d.squats/100) + (d.steps/10000) + (d.sugar || 0);
             if (totalProgress === 0) return 0;
-            if (totalProgress <= 1) return 1;
-            if (totalProgress <= 2) return 2;
-            if (totalProgress <= 3.5) return 3;
+            if (totalProgress <= 1.5) return 1;
+            if (totalProgress <= 3) return 2;
+            if (totalProgress <= 4.5) return 3;
             return 4;
         }
 
         function initCalendar() {
             const wrapper = document.getElementById('calendar-wrapper');
             wrapper.innerHTML = '';
-            
-            // Dynamic Year Title
             document.getElementById('calendar-title').innerText = `Training Contributions ${currentYear}`;
-
             const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
             
             months.forEach((month, mIdx) => {
@@ -287,8 +287,6 @@
                 monthDiv.innerHTML = `<div>${month}</div>`;
                 const daysGrid = document.createElement('div');
                 daysGrid.className = 'days-grid';
-                
-                // Dynamic days in month based on current year
                 const daysInMonth = new Date(currentYear, mIdx + 1, 0).getDate();
                 
                 for(let d = 1; d <= daysInMonth; d++) {
@@ -307,8 +305,8 @@
         }
 
         function update(exercise, amount) {
-            if(!allData[todayStr]) allData[todayStr] = { pushups: 0, situps: 0, squats: 0, steps: 0 };
-            allData[todayStr][exercise] = Math.max(0, Math.min(goals[exercise], allData[todayStr][exercise] + amount));
+            if(!allData[todayStr]) allData[todayStr] = { pushups: 0, situps: 0, squats: 0, steps: 0, sugar: 0 };
+            allData[todayStr][exercise] = Math.max(0, Math.min(goals[exercise], (allData[todayStr][exercise] || 0) + amount));
             localStorage.setItem('heroLogs_v2', JSON.stringify(allData));
             renderForm();
             initCalendar();
@@ -316,15 +314,14 @@
 
         function renderForm() {
             document.getElementById('display-date').innerText = todayStr;
-            const data = allData[todayStr] || { pushups: 0, situps: 0, squats: 0, steps: 0 };
+            const data = allData[todayStr] || { pushups: 0, situps: 0, squats: 0, steps: 0, sugar: 0 };
             for (const key in goals) {
-                document.getElementById(`${key}-count`).innerText = data[key].toLocaleString();
-                document.getElementById(`${key}-bar`).style.width = `${(data[key] / goals[key]) * 100}%`;
+                document.getElementById(`${key}-count`).innerText = (data[key] || 0).toLocaleString();
+                document.getElementById(`${key}-bar`).style.width = `${((data[key] || 0) / goals[key]) * 100}%`;
             }
         }
 
         function updateHeroRank() {
-            // Rank is calculated based on ALL days ever logged in LocalStorage
             const activeDays = Object.keys(allData).length;
             let rank = "C-Class Hero";
             if (activeDays >= 300) rank = "Saitama Level";
